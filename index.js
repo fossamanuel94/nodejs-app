@@ -3,6 +3,7 @@ const app = express();
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const moment = require("moment");
 const cors = require("cors");
 const saltRounds = 10;
 
@@ -69,28 +70,41 @@ app.get("/users", (req, res) => {
 app.post("/add-user", async (req, res) => {
   const name = req.body.user_name;
   const email = req.body.user_email;
+  const nickname = req.body.user_nickname;
   const pw = await bcrypt.hash(req.body.user_password, saltRounds);
 
   pool.query(
     "SELECT * FROM users WHERE user_email='" + email + "'",
     (err, rows) => {
       if (err) res.send(err);
-      if (rows[0] != null) res.send("Email ya utilizado, pruebe con otro");
-      else {
-        pool.query(
-          "INSERT INTO users VALUES(null, '" +
-            name +
-            "','" +
-            email +
-            "','" +
-            pw +
-            "')",
-          (err) => {
-            if (err) res.send(err);
-            else res.send("Usuario agregado con exito");
+      if (rows[0] != null) res.send("El Email ya utilizado, pruebe con otro");
+      pool.query(
+        "SELECT * FROM users WHERE user_nickname='" + nickname + "'",
+        (err, rows) => {
+          if (err) res.send(err);
+          if (rows[0] != null)
+            res.send("El Nickname ya esta utilizado, pruebe con otro");
+          else {
+            pool.query(
+              "INSERT INTO users VALUES(null, '" +
+                name +
+                "','" +
+                email +
+                "','" +
+                pw +
+                "','" +
+                nickname +
+                "','" +
+                2 +
+                "')",
+              (err) => {
+                if (err) res.send(err);
+                else res.send("Usuario agregado con exito");
+              }
+            );
           }
-        );
-      }
+        }
+      );
     }
   );
 });
@@ -127,25 +141,32 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/add-post", verifyToken, (req, res) => {
+  const fecha = moment().format("YYYY-MM-DD HH:mm:ss");
   jwt.verify(req.token, "secretKey", (err, data) => {
     if (err) res.send(err);
-    else {
-      pool.query(
-        "INSERT INTO posts VALUES (null, '" +
-          data.id_user +
-          "','" +
-          req.body.post_desc +
-          "','" +
-          req.body.post_title +
-          "','" +
-          req.body.post_image +
-          "')",
-        (err, rows) => {
-          if (err) res.send("No se pudo guardar el post");
-          else res.send("Post guardado con exito");
-        }
-      );
+    if (req.body.post_categ === "") {
+      req.body.post_categ = "1";
     }
+    console.log(data, req.body);
+    pool.query(
+      "INSERT INTO posts VALUES (null, '" +
+        data.id_user +
+        "','" +
+        req.body.post_desc +
+        "','" +
+        req.body.post_title +
+        "','" +
+        req.body.post_image +
+        "','" +
+        fecha +
+        "','" +
+        req.body.post_categ +
+        "')",
+      (err, rows) => {
+        if (err) res.send(err);
+        else res.send("Post guardado con exito");
+      }
+    );
   });
 });
 
@@ -165,7 +186,7 @@ app.get("/post/:id", (req, res) => {
 
 app.get("/all-posts", (req, res) => {
   pool.query(
-    "SELECT id_post, post_desc, post_title, post_image FROM posts",
+    "SELECT p.id_post, p.post_title, p.post_desc, p.post_image, p.post_date, u.user_nickname, c.categorie FROM posts AS p INNER JOIN users AS u ON p.id_user=u.id_user INNER JOIN categories AS c ON p.id_categorie=c.id_categorie ORDER BY p.post_date DESC",
     (err, rows) => {
       if (err) {
         res.json({ error: err });
@@ -176,15 +197,15 @@ app.get("/all-posts", (req, res) => {
   );
 });
 
-app.get("/get-categories", (req,res)=>{
-  pool.query("SELECT * FROM categories", (err, rows)=>{
-    if(err){
-      res.json({error:err})
-    }else{
-      res.json({data:rows})
+app.get("/get-categories", (req, res) => {
+  pool.query("SELECT * FROM categories", (err, rows) => {
+    if (err) {
+      res.json({ error: err });
+    } else {
+      res.json({ data: rows });
     }
-  })
-})
+  });
+});
 
 app.listen(8080, () => {
   console.log("Running on port 8080");
