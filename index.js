@@ -197,6 +197,13 @@ app.get("/all-posts", (req, res) => {
   );
 });
 
+app.get("/latest-posts", (req, res)=>{
+  pool.query("SELECT * FROM posts ORDER BY post_date DESC LIMIT 3", (err, rows)=>{
+    if(err) res.json({error:err})
+    else res.json({result:rows})
+  })
+})
+
 app.get("/get-categories", (req, res) => {
   pool.query("SELECT * FROM categories", (err, rows) => {
     if (err) {
@@ -206,6 +213,14 @@ app.get("/get-categories", (req, res) => {
     }
   });
 });
+
+app.get("/categorie-post/:id", (req,res)=>{
+  const id = req.params.id
+  pool.query("SELECT * FROM posts WHERE id_categorie='"+id+"'", (err, rows)=>{
+    if(err) res.json(err)
+    else res.json({data:rows})
+  })
+})
 
 app.listen(8080, () => {
   console.log("Running on port 8080");
