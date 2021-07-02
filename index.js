@@ -19,6 +19,7 @@ const pool = mysql.createConnection({
 function verifyToken(req, res, next) {
   const bearerHeader = req.headers["authorization"];
   //console.log(bearerHeader)
+  if(typeof bearerHeader === "undefined") res.send("JWT ERROR")
   if (typeof bearerHeader !== "undefined") {
     const bearerToken = bearerHeader.split(" ")[1];
     req.token = bearerToken;
@@ -140,6 +141,38 @@ app.post("/login", (req, res) => {
   );
 });
 
+
+app.get("/comments/:id", (req,res)=>{
+  const id = req.params.id;
+  pool.query("SELECT c.id_comment, c.comment, c.comment_date, u.user_nickname FROM comments AS c INNER JOIN users AS u ON c.id_user = u.id_user WHERE c.id_post ='"+id+"' ORDER BY c.comment_date DESC",(err, rows)=>{
+    if(err) res.send(err)
+    else res.json({result:rows})
+  })
+})
+
+app.post("/add-comment",verifyToken, (req,res)=>{
+  const fecha = moment().format("YYYY-MM-DD HH:mm:ss");
+  console.log(req.headers, req.body)
+  jwt.verify(req.token, "secretKey", (err,data)=>{
+    if(err) res.send(err)
+    if(err) res.send(err);
+    pool.query("INSERT INTO comments VALUES (null, '" +
+      data.id_user+
+      "','"+
+      req.body.id_post+
+      "','"+
+      req.body.comment+
+      "','"+
+      fecha +
+      "')",
+    (err,rows) =>{
+      if(err) res.send(err)
+      else res.send("Comentario guardado con exito")
+    }
+    )
+  })
+})
+
 app.post("/add-post", verifyToken, (req, res) => {
   const fecha = moment().format("YYYY-MM-DD HH:mm:ss");
   jwt.verify(req.token, "secretKey", (err, data) => {
@@ -173,7 +206,9 @@ app.post("/add-post", verifyToken, (req, res) => {
 app.get("/post/:id", (req, res) => {
   const id = req.params.id;
   pool.query(
-    "SELECT post_desc, post_title FROM posts WHERE id_post = '" + id + "'",
+    "SELECT p.id_post, p.post_title, p.post_subtitle, p.post_desc, p.post_image, p.post_date, u.user_nickname, c.categorie FROM posts AS p INNER JOIN users AS u ON p.id_user=u.id_user INNER JOIN categories AS c ON p.id_categorie=c.id_categorie WHERE p.id_post='" +
+      id +
+      "'",
     (err, rows) => {
       if (err) {
         res.json({ error: err });
@@ -197,12 +232,15 @@ app.get("/all-posts", (req, res) => {
   );
 });
 
-app.get("/latest-posts", (req, res)=>{
-  pool.query("SELECT * FROM posts ORDER BY post_date DESC LIMIT 3", (err, rows)=>{
-    if(err) res.json({error:err})
-    else res.json({result:rows})
-  })
-})
+app.get("/latest-posts", (req, res) => {
+  pool.query(
+    "SELECT * FROM posts ORDER BY post_date DESC LIMIT 3",
+    (err, rows) => {
+      if (err) res.json({ error: err });
+      else res.json({ result: rows });
+    }
+  );
+});
 
 app.get("/get-categories", (req, res) => {
   pool.query("SELECT * FROM categories", (err, rows) => {
@@ -214,13 +252,18 @@ app.get("/get-categories", (req, res) => {
   });
 });
 
-app.get("/categorie-post/:id", (req,res)=>{
-  const id = req.params.id
-  pool.query("SELECT * FROM posts WHERE id_categorie='"+id+"'", (err, rows)=>{
-    if(err) res.json(err)
-    else res.json({data:rows})
-  })
-})
+app.get("/categorie-post/:id", (req, res) => {
+  const id = req.params.id;
+  pool.query(
+    "SELECT * FROM posts WHERE id_categorie='" + id + "'",
+    (err, rows) => {
+      if (err) res.json(err);
+      else res.json({ data: rows });
+    }
+  );
+});
+
+
 
 app.listen(8080, () => {
   console.log("Running on port 8080");
