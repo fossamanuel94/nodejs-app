@@ -3,6 +3,7 @@ const app = express();
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const middleware = require('./algo')
 const moment = require("moment");
 const cors = require("cors");
 const saltRounds = 10;
@@ -15,6 +16,10 @@ const pool = mysql.createConnection({
   user: "root",
   database: "test2",
 });
+
+app.get("/algo", middleware.algo, (req,res)=>{
+  res.json({msg: req.data+" y algo mas"})
+})
 
 function verifyToken(req, res, next) {
   const bearerHeader = req.headers["authorization"];
@@ -30,7 +35,7 @@ function verifyToken(req, res, next) {
 }
 
 function generateAccessToken(user) {
-  return jwt.sign(user, "secretKey", { expiresIn: "60s" });
+  return jwt.sign(user, "secretKey", { expiresIn: "15m" });
 }
 
 app.post("/token", (req, res) => {
@@ -67,6 +72,22 @@ app.get("/users", (req, res) => {
     }
   });
 });
+
+app.get("/email-validation/:email", (req,res)=>{
+  const email = req.params.email
+  pool.query(`SELECT user_email FROM users WHERE user_email='${email}'`, (err, rows)=>{
+    if(err) res.send(err)
+    else res.send(rows[0])
+  })
+})
+
+app.get("/nick-validation/:nick", (req,res)=>{
+  const nick = req.params.nick
+  pool.query(`SELECT user_nickname FROM users WHERE user_nickname='${nick}'`, (err, rows)=>{
+    if(err) res.send(err)
+    else res.send(rows[0])
+  })
+})
 
 app.post("/add-user", async (req, res) => {
   const name = req.body.user_name;
@@ -115,7 +136,7 @@ app.post("/login", (req, res) => {
   var pw = req.body.user_pw;
 
   pool.query(
-    "SELECT id_user,user_name, user_email, user_password FROM users WHERE user_email='" +
+    "SELECT id_user,user_name, user_email, user_password, user_nickname FROM users WHERE user_email='" +
       email +
       "'",
     (err, rows) => {
@@ -133,7 +154,7 @@ app.post("/login", (req, res) => {
             const tokenA = generateAccessToken(user);
             const tokenR = jwt.sign({ user }, "secretKeyRefresh");
             const tokens = { tokenA, tokenR };
-            res.status(200).json({ name: rows[0].user_name, tokens });
+            res.status(200).json({ name: rows[0].user_nickname, tokens });
           } else res.status(202).json({ message: "Contrasena erronea" });
         });
       }
@@ -152,7 +173,6 @@ app.get("/comments/:id", (req,res)=>{
 
 app.post("/add-comment",verifyToken, (req,res)=>{
   const fecha = moment().format("YYYY-MM-DD HH:mm:ss");
-  console.log(req.headers, req.body)
   jwt.verify(req.token, "secretKey", (err,data)=>{
     if(err) res.send(err)
     if(err) res.send(err);
