@@ -1,7 +1,7 @@
-const express = require("express")
-const app = express();
+const jwt = require("jsonwebtoken");
 
 const verifyToken = (req, res, next) => {
+  
     const bearerHeader = req.headers["authorization"];
     //console.log(bearerHeader)
     if (typeof bearerHeader === "undefined") res.send("JWT ERROR");
@@ -14,4 +14,13 @@ const verifyToken = (req, res, next) => {
     }
   }
 
-module.exports = verifyToken;
+
+  const generateAccessToken = (user) =>{
+    return jwt.sign(user, "secretKey", { expiresIn: "15m" });
+  }
+
+
+module.exports = {
+  verifyToken,
+  generateAccessToken
+}

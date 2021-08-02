@@ -2,7 +2,8 @@ const express = require("express");
 const app = express.Router();
 const jwt = require("jsonwebtoken");
 const connection = require("../DBConnection/dbConnection");
-const verifyToken = require("../Authentication/jwtMiddleware")
+const {verifyToken} = require("../Authentication/jwtMiddleware");
+const moment = require("moment");
 
 app.post("/add-post", verifyToken, (req, res) => {
   const { post_desc, post_title, post_subtitle, post_image, post_categ } =

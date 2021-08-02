@@ -2,8 +2,10 @@ const express = require("express");
 const app = express.Router();
 const jwt = require("jsonwebtoken");
 const connection = require("../DBConnection/dbConnection");
+const {generateAccessToken} = require("../Authentication/jwtMiddleware")
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+
 
 app.get("/users", (req, res) => {
   connection.query(`SELECT * FROM users`, 
