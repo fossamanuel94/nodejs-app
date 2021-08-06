@@ -19,7 +19,9 @@ app.get("/categorie-post/:id", (req, res) => {
   connection.query(
     `SELECT * 
     FROM posts 
-    WHERE id_categorie="${id}"`,
+    WHERE id_categorie="${id}"
+    ORDER BY post_date DESC`,
+    
     (err, rows) => {
       if (err) res.json(err);
       else res.json({ data: rows });

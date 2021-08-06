@@ -9,7 +9,7 @@ const connection = require("../DBConnection/dbConnection");
 app.get("/:id", (req, res) => {
   const id = req.params.id;
   connection.query(
-    `SELECT c.id_comment, c.comment, c.comment_date, u.user_nickname 
+    `SELECT c.id_comment, c.comment, c.comment_date, u.user_nickname, u.user_image 
     FROM comments AS c 
     INNER JOIN users AS u 
     ON c.id_user = u.id_user 

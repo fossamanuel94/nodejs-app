@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express.Router();
 const {verifyToken} = require("../Authentication/jwtMiddleware")
+const jwt = require("jsonwebtoken")
 
 function generateAccessToken(user) {
     return jwt.sign(user, "secretKey", { expiresIn: "15m" });

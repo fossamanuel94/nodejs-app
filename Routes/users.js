@@ -7,6 +7,7 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 
+
 app.get("/users", (req, res) => {
   connection.query(`SELECT * FROM users`, 
   (err, rows, fields) => {
@@ -33,6 +34,7 @@ app.get("/email-validation/:email", (req, res) => {
   );
 });
 
+
 app.get("/nick-validation/:nick", (req, res) => {
   const nick = req.params.nick;
   connection.query(
@@ -50,6 +52,7 @@ app.post("/add-user", async (req, res) => {
   const name = req.body.user_name;
   const email = req.body.user_email;
   const nickname = req.body.user_nickname;
+  const image = req.body.user_image;
   const pw = await bcrypt.hash(req.body.user_password, saltRounds);
 
   connection.query(
@@ -70,7 +73,7 @@ app.post("/add-user", async (req, res) => {
           else {
             connection.query(
               `INSERT INTO users 
-              VALUES (null, "${name}","${email}","${pw}","${nickname}","2")`,
+              VALUES (null, "${name}","${email}","${pw}","${nickname}","${image}","2")`,
               (err) => {
                 if (err) res.send(err);
                 else res.send("Usuario agregado con exito");
@@ -83,12 +86,13 @@ app.post("/add-user", async (req, res) => {
   );
 });
 
+
 app.post("/login", (req, res) => {
-  var email = req.body.user_email;
-  var pw = req.body.user_pw;
+  const email = req.body.user_email;
+  const pw = req.body.user_pw;
 
   connection.query(
-    `SELECT id_user,user_name, user_email, user_password, user_nickname 
+    `SELECT id_user,user_name, user_email, user_password, user_nickname, user_type 
     FROM users 
     WHERE user_email="${email}"`,
     (err, rows) => {
@@ -106,12 +110,12 @@ app.post("/login", (req, res) => {
             const tokenA = generateAccessToken(user);
             const tokenR = jwt.sign({ user }, "secretKeyRefresh");
             const tokens = { tokenA, tokenR };
-            res.status(200).json({ name: rows[0].user_nickname, tokens });
+            res.status(200).json({ name: rows[0].user_nickname, type: rows[0].user_type, tokens });
           } else res.status(202).json({ message: "Contrasena erronea" });
         });
       }
     }
   );
-});
-
+}); 
+ 
 module.exports = app;
