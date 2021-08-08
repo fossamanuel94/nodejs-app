@@ -16,6 +16,10 @@ app.use('/comments', comments);
 app.use('/categories', categories);
 app.use('/jwt', jwt);
 
+app.get("/", (req,res)=>{
+  res.send("Hola Mundo!")
+})
+
 
 
 app.listen(port, () => {
