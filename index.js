@@ -6,6 +6,7 @@ const comments = require("./Routes/comments");
 const categories = require("./Routes/categories");
 const jwt = require("./Routes/jwt")
 const cors = require("cors");
+const port = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use(cors());
@@ -16,6 +17,7 @@ app.use('/categories', categories);
 app.use('/jwt', jwt);
 
 
-app.listen(8080, () => {
+
+app.listen(port, () => {
   console.log("Running on port 8080");
 });
